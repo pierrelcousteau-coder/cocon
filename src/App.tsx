@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { CalendarDays, House, MessageCircle, Settings2, type LucideIcon } from 'lucide-react'
+import { CalendarDays, House, ListTodo, MessageCircle, Settings2, type LucideIcon } from 'lucide-react'
 import { configured, supabase } from './lib/supabase'
 import { useTracker } from './lib/data'
 import { useMessages, usePartner } from './lib/messages'
+import { useTodos } from './lib/todos'
+import { today } from './lib/dates'
 import type { Profile } from './lib/types'
 import { Toast } from './components/ui'
 import Auth, { NewPassword } from './screens/Auth'
@@ -13,6 +15,7 @@ import Week from './screens/Week'
 import Routine from './screens/Routine'
 import Supporter from './screens/Supporter'
 import Messages from './screens/Messages'
+import Todo from './screens/Todo'
 
 export default function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
@@ -43,7 +46,7 @@ export default function App() {
   return <Shell profile={profile} setProfile={setProfile} />
 }
 
-type Tab = 'today' | 'week' | 'messages' | 'settings'
+type Tab = 'today' | 'todo' | 'week' | 'messages' | 'settings'
 
 function Shell({ profile, setProfile }: { profile: Profile; setProfile: (p: Profile) => void }) {
   const supporter = profile.role === 'supporter'
@@ -51,6 +54,9 @@ function Shell({ profile, setProfile }: { profile: Profile; setProfile: (p: Prof
   const tracker = useTracker(supporter ? undefined : profile.id)
   const partner = usePartner(profile)
   const chat = useMessages(profile.id)
+  const todos = useTodos(supporter ? partner?.id ?? undefined : profile.id)
+  const todayTodos = todos.ofDay(today())
+  const todoSummary = { done: todayTodos.filter((t) => t.done).length, total: todayTodos.length }
   const [toast, setToast] = useState<string | null>(null)
   const clearToast = useCallback(() => setToast(null), [])
 
@@ -69,14 +75,17 @@ function Shell({ profile, setProfile }: { profile: Profile; setProfile: (p: Prof
 
   let screen
   if (tab === 'messages') screen = <Messages me={profile} partner={partner} chat={chat} />
-  else if (supporter) screen = <Supporter me={profile} partner={partner} tab={tab} />
+  else if (tab === 'todo') screen = supporter && !partner ? null : <Todo profile={supporter ? partner! : profile} todos={todos} readOnly={supporter} />
+  else if (supporter) screen = <Supporter me={profile} partner={partner} tab={tab} todoSummary={todoSummary} onOpenTodo={() => go('todo')} />
   else if (tracker.loading) screen = <p className="center muted" style={{ marginTop: 140 }}>Cocon</p>
-  else if (tab === 'today') screen = <Today profile={profile} tracker={tracker} unread={lastUnread} onOpenMessages={() => go('messages')} onGoRoutine={() => go('settings')} />
+  else if (tab === 'today') screen = <Today profile={profile} tracker={tracker} unread={lastUnread} onOpenMessages={() => go('messages')} onGoRoutine={() => go('settings')}
+    todoSummary={todoSummary} onOpenTodo={() => go('todo')} />
   else if (tab === 'week') screen = <Week profile={profile} tracker={tracker} />
   else screen = <Routine profile={profile} setProfile={setProfile} tracker={tracker} />
 
   const items: [Tab, LucideIcon, string][] = [
     ['today', House, "Aujourd'hui"],
+    ['todo', ListTodo, 'To do'],
     ['week', CalendarDays, 'Semaine'],
     ['messages', MessageCircle, 'Messages'],
     ['settings', Settings2, supporter ? 'Réglages' : 'Routine'],

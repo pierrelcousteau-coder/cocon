@@ -3,6 +3,13 @@ import { supabase } from '../lib/supabase'
 
 type Mode = 'in' | 'up' | 'forgot'
 
+const frMessage = (m: string) =>
+  /rate limit/i.test(m) ? 'Trop d’emails envoyés récemment. Réessaie dans une heure.'
+  : m === 'Invalid login credentials' ? 'Email ou mot de passe incorrect.'
+  : /Email not confirmed/i.test(m) ? 'Adresse pas encore confirmée : clique sur le lien reçu par email.'
+  : /already registered/i.test(m) ? 'Un compte existe déjà avec cet email.'
+  : m
+
 export default function Auth() {
   const [mode, setMode] = useState<Mode>('in')
   const [email, setEmail] = useState('')
@@ -19,13 +26,13 @@ export default function Auth() {
     if (mode === 'forgot') {
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: location.origin + import.meta.env.BASE_URL })
       setBusy(false)
-      return setMsg(error ? { ok: false, text: error.message } : { ok: true, text: 'Un lien pour choisir un nouveau mot de passe vient de t’être envoyé par email.' })
+      return setMsg(error ? { ok: false, text: frMessage(error.message) } : { ok: true, text: 'Un lien pour choisir un nouveau mot de passe vient de t’être envoyé par email.' })
     }
     const { data, error } = mode === 'in'
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ email, password })
     setBusy(false)
-    if (error) return setMsg({ ok: false, text: error.message === 'Invalid login credentials' ? 'Email ou mot de passe incorrect.' : error.message })
+    if (error) return setMsg({ ok: false, text: frMessage(error.message) })
     if (mode === 'up' && !data.session) setMsg({ ok: true, text: 'Compte créé. Confirme ton adresse via le lien reçu par email, puis connecte-toi.' })
   }
 

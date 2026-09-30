@@ -7,7 +7,9 @@ import Today from './Today'
 import Week from './Week'
 
 /** Vue du soutien : la journée et la semaine de la personne suivie, en lecture seule */
-export default function Supporter({ me, partner, tab }: { me: Profile; partner: Profile | null | undefined; tab: 'today' | 'week' | 'settings' }) {
+export default function Supporter({ me, partner, tab, todoSummary, onOpenTodo }: {
+  me: Profile; partner: Profile | null | undefined; tab: 'today' | 'week' | 'settings'; todoSummary: { done: number; total: number }; onOpenTodo: () => void
+}) {
   const tracker = useTracker(partner?.id)
   const [pushMsg, setPushMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const on = async () => {
@@ -42,5 +44,5 @@ export default function Supporter({ me, partner, tab }: { me: Profile; partner: 
   }
   if (!partner || tracker.loading) return <p className="center muted" style={{ marginTop: 120 }}>Chargement…</p>
   if (tab === 'week') return <Week profile={partner} tracker={tracker} />
-  return <Today profile={partner} tracker={tracker} readOnly />
+  return <Today profile={partner} tracker={tracker} readOnly todoSummary={todoSummary} onOpenTodo={onOpenTodo} />
 }

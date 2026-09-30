@@ -65,3 +65,12 @@ export interface Encouragement {
   created_at: string
   read_at: string | null
 }
+
+export interface Todo {
+  id: string
+  user_id: string
+  day: string
+  title: string
+  done: boolean
+  sort: number
+}

@@ -70,6 +70,10 @@ async function reminders() {
 
       let body = ''
       if (todo.length) body = todo.map((i) => i.name).join(', ')
+      if (moment === 'morning') {
+        const { count } = await db.from('todos').select('id', { count: 'exact', head: true }).eq('user_id', p.id).eq('day', day)
+        if (!count) body += `${body ? ' · ' : ''}Écris ta to do du jour`
+      }
       if (moment === 'evening') {
         const { data: log } = await db.from('daily_logs').select('water_ml, walked').eq('user_id', p.id).eq('day', day).maybeSingle()
         const extra = [!log?.walked && 'ta marche', !(log?.water_ml) && 'ton eau'].filter(Boolean)

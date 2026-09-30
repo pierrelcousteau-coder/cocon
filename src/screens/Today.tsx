@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronLeft, ChevronRight, MessageCircle, Minus, Plus, X } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, ListTodo, MessageCircle, Minus, Plus, X } from 'lucide-react'
 import { Burst, Ring, Sheet } from '../components/ui'
 import { Icon } from '../components/Icon'
 import type { TrackerApi } from '../lib/data'
@@ -14,11 +14,13 @@ interface Props {
   unread?: Encouragement | null
   onOpenMessages?: () => void
   onGoRoutine?: () => void
+  todoSummary?: { done: number; total: number }
+  onOpenTodo?: () => void
 }
 
 export const itemIcon = (i: RoutineItem) => i.icon || KINDS.find((k) => k.key === i.kind)!.icon
 
-export default function Today({ profile, tracker: t, readOnly, unread, onOpenMessages, onGoRoutine }: Props) {
+export default function Today({ profile, tracker: t, readOnly, unread, onOpenMessages, onGoRoutine, todoSummary, onOpenTodo }: Props) {
   const now = today()
   const [day, setDay] = useState(now)
   const [sportOpen, setSportOpen] = useState(false)
@@ -92,6 +94,21 @@ export default function Today({ profile, tracker: t, readOnly, unread, onOpenMes
         <p className={`note ${score.ratio >= 0.999 ? 'ok' : ''}`}>
           {dailyMessage({ ratio: score.ratio, presentToday: present(now), presentYesterday: present(addDays(now, -1)), name: profile.name })}
         </p>
+      )}
+
+      {todoSummary && day === now && (
+        <button className={`banner ${todoSummary.total && todoSummary.done === todoSummary.total ? 'ok' : ''}`} onClick={onOpenTodo}>
+          <ListTodo size={18} strokeWidth={1.6} />
+          <span className="grow">
+            <span className="from">To do du jour</span>
+            <div>
+              {!todoSummary.total ? (readOnly ? 'Rien de noté pour l’instant' : 'Écrire ma to do')
+                : todoSummary.done === todoSummary.total ? 'Tout est fait'
+                : `${todoSummary.done}/${todoSummary.total} faite${todoSummary.done > 1 ? 's' : ''}`}
+            </div>
+          </span>
+          <ChevronRight size={16} className="muted" />
+        </button>
       )}
 
       {daily.length === 0 && weekly.length === 0 && !readOnly && (

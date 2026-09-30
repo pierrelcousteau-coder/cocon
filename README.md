@@ -29,7 +29,7 @@ npm run demo
 
 ### 1. Supabase
 
-1. Nouveau projet (ou existant) → **SQL Editor** → coller `supabase/schema.sql` → *Run*, puis `supabase/migration_002.sql` → *Run*.
+1. Nouveau projet (ou existant) → **SQL Editor** → coller `supabase/schema.sql` → *Run*, puis `supabase/migration_002.sql` et `supabase/migration_003.sql` → *Run*.
 2. **Authentication → Providers → Email** : laisser activé. Optionnel : désactiver *Confirm email* pour éviter l'étape de confirmation.
 3. **Project Settings → API** : noter `Project URL` et la clé `anon public`.
 

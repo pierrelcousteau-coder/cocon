@@ -12,6 +12,7 @@ const KEYS: Record<string, string[]> = {
   cheat_meals: ['id'],
   encouragements: ['id'],
   push_subscriptions: ['endpoint'],
+  todos: ['id'],
 }
 const UID = 'demo-user'
 const STORE = 'cocon-demo'
@@ -49,6 +50,10 @@ function seed(): Record<string, Row[]> {
       { id: 'e1', from_id: 'demo-partner', to_id: UID, message: 'Je suis fier de toi', created_at: new Date().toISOString(), read_at: null },
     ],
     push_subscriptions: [],
+    todos: [
+      { id: 't1', user_id: UID, day: addDays(t, -1), title: 'Appeler le laboratoire', done: false, sort: 0 },
+      { id: 't2', user_id: UID, day: addDays(t, -1), title: 'Courses bio', done: true, sort: 1 },
+    ],
   }
 }
 
