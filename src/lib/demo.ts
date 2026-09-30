@@ -22,17 +22,19 @@ function seed(): Record<string, Row[]> {
     { id: 'i1', kind: 'supplement', name: 'Exemple : complément 1', dose: '1 gélule', moment: 'morning' },
     { id: 'i2', kind: 'supplement', name: 'Exemple : complément 2', dose: '', moment: 'morning' },
     { id: 'i3', kind: 'phyto', name: 'Exemple : plante', dose: '1 tisane', moment: 'evening' },
-  ].map((i, n) => ({ ...i, user_id: UID, active: true, sort: n, created_at: '' }))
+    { id: 'i4', kind: 'activity', name: 'Méditation', dose: '10 minutes', moment: 'anytime', icon: 'Brain' },
+    { id: 'i5', kind: 'activity', name: 'Lecture', dose: '', moment: 'anytime', icon: 'BookOpen', frequency: 'weekly', weekly_target: 3 },
+  ].map((i, n) => ({ icon: '', frequency: 'daily', weekly_target: 1, ...i, user_id: UID, active: true, sort: n, created_at: '' }))
   const logs: Row[] = []
   const checks: Row[] = []
   for (let k = 1; k <= 9; k++) {
     if (k === 4) continue // un jour « off »
     const day = addDays(t, -k)
     logs.push({ user_id: UID, day, water_ml: 1000 + (k % 3) * 250, walked: k % 2 === 1, steps: k % 2 ? 5000 + k * 400 : null, mood: null })
-    for (const i of items.slice(0, k % 3 === 0 ? 2 : 3)) checks.push({ user_id: UID, day, item_id: i.id })
+    for (const i of items.slice(0, k % 3 === 0 ? 2 : 4)) checks.push({ user_id: UID, day, item_id: i.id })
   }
   return {
-    profiles: [{
+    profiles: [{ id: 'demo-partner', name: 'Soutien', role: 'supporter', linked_to: UID, invite_code: 'PART01' }, {
       id: UID, name: '', role: 'owner', linked_to: null, invite_code: 'DEMO42', tz: 'Europe/Paris',
       water_goal_ml: 1500, glass_ml: 250, sport_per_week: 3, sport_types: ['Marche rapide', 'Yoga', 'Pilates', 'Natation'],
       cheat_max: 1, reminders: { morning: '08:00', noon: '12:30', evening: '21:00' }, reminders_on: false,
@@ -42,7 +44,10 @@ function seed(): Record<string, Row[]> {
     item_checks: checks,
     sport_sessions: [{ id: 's1', user_id: UID, day: addDays(t, -2), type: 'Yoga', minutes: 30, created_at: '' }],
     cheat_meals: [],
-    encouragements: [{ id: 'e1', from_id: 'x', to_id: UID, message: 'Je suis fier de toi ❤️', created_at: new Date().toISOString(), read_at: null }],
+    encouragements: [
+      { id: 'e0', from_id: UID, to_id: 'demo-partner', message: 'Journée difficile', created_at: new Date(Date.now() - 86400000).toISOString(), read_at: new Date().toISOString() },
+      { id: 'e1', from_id: 'demo-partner', to_id: UID, message: 'Je suis fier de toi', created_at: new Date().toISOString(), read_at: null },
+    ],
     push_subscriptions: [],
   }
 }
@@ -75,6 +80,11 @@ class Query implements PromiseLike<{ data: any; error: any }> {
   gte(k: string, v: any) { this.filters.push((r) => r[k] >= v); return this }
   is(k: string, v: any) { this.filters.push((r) => (r[k] ?? null) === v); return this }
   in(k: string, v: any[]) { this.filters.push((r) => v.includes(r[k])); return this }
+  or(expr: string) {
+    const parts = expr.split(',').map((p) => p.split('.'))
+    this.filters.push((r) => parts.some(([k, , v]) => String(r[k]) === v))
+    return this
+  }
   match(o: Row) { for (const [k, v] of Object.entries(o)) this.eq(k, v); return this }
   order(k: string, o?: { ascending?: boolean }) { if (!this.sortKey) { this.sortKey = k; this.asc = o?.ascending ?? true } return this }
   limit(n: number) { this.n = n; return this }
@@ -123,8 +133,15 @@ const setAuth = (on: boolean) => {
   return { data: { session: session() }, error: null }
 }
 
+const channel = () => {
+  const c = { on: () => c, subscribe: () => c }
+  return c
+}
+
 export const demoClient = {
   from: (t: string) => new Query(t),
+  channel,
+  removeChannel: () => {},
   rpc: async () => ({ data: null, error: { message: 'Indisponible en mode démo' } }),
   functions: { invoke: async () => ({ data: null, error: null }) },
   auth: {
@@ -136,6 +153,8 @@ export const demoClient = {
     signInWithPassword: async () => setAuth(true),
     signUp: async () => setAuth(true),
     signOut: async () => setAuth(false),
+    resetPasswordForEmail: async () => ({ data: null, error: null }),
+    updateUser: async () => ({ data: null, error: null }),
   },
 }
 

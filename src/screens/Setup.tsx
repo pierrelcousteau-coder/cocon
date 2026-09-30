@@ -28,18 +28,20 @@ export default function Setup({ profile, onDone }: { profile: Profile; onDone: (
 
   return (
     <div className="auth">
-      <h1>Bienvenue 🌷</h1>
-      <p className="center muted" style={{ marginTop: 0, marginBottom: 20 }}>Deux questions et c'est parti.</p>
-      <div className="card">
+      <div className="brand">
+        <div className="eyebrow">Bienvenue</div>
+        <h1 className="title">Faisons connaissance</h1>
+      </div>
+      <div className="panel" style={{ padding: 18 }}>
         <label className="field"><span>Ton prénom</span>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
         </label>
-        <label className="field"><span>Tu utilises Cocon pour…</span>
-          <div className="row wrap">
-            <button className={`chip ${role === 'owner' ? 'on' : ''}`} onClick={() => setRole('owner')}>🌸 Suivre ma routine</button>
-            <button className={`chip ${role === 'supporter' ? 'on' : ''}`} onClick={() => setRole('supporter')}>💛 La soutenir</button>
+        <div className="field"><span>Tu utilises Cocon pour…</span>
+          <div className="chips">
+            <button className={`chip ${role === 'owner' ? 'on' : ''}`} onClick={() => setRole('owner')}>Suivre ma routine</button>
+            <button className={`chip ${role === 'supporter' ? 'on' : ''}`} onClick={() => setRole('supporter')}>La soutenir</button>
           </div>
-        </label>
+        </div>
         {role === 'supporter' && (
           <label className="field"><span>Son code (dans Routine → Mon soutien)</span>
             <input className="input" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="ex. A1B2C3" maxLength={6} />

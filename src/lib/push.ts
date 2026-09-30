@@ -40,7 +40,17 @@ export async function enablePush(userId: string) {
   if (error) throw error
 }
 
-/** Prévient la personne soutenue qu'un encouragement l'attend */
-export async function notifyEncouragement(encouragementId: string) {
-  await supabase.functions.invoke('push', { body: { type: 'encouragement', id: encouragementId } }).catch(() => {})
+/** Envoie une notification à l'autre personne pour un nouveau message */
+export async function notifyMessage(messageId: string) {
+  await supabase.functions.invoke('push', { body: { type: 'encouragement', id: messageId } }).catch(() => {})
+}
+
+/** Envoie une notification de test à soi-même ; renvoie le diagnostic */
+export async function testPush(): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('push', { body: { type: 'test' } })
+  if (error) return `Erreur serveur : ${error.message}`
+  if (!data?.subs) return "Aucun appareil enregistré : touche d'abord « Activer les rappels »."
+  const failed = (data.results ?? []).filter((r: { ok: boolean }) => !r.ok)
+  if (failed.length === data.subs) return `Échec d'envoi : ${failed[0]?.error ?? 'inconnu'}`
+  return `Notification envoyée à ${data.subs - failed.length} appareil${data.subs - failed.length > 1 ? 's' : ''}.`
 }

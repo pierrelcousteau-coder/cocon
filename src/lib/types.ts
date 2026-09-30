@@ -1,8 +1,18 @@
-export type Moment = 'morning' | 'noon' | 'evening'
-export const MOMENTS: { key: Moment; label: string; emoji: string; hint: string }[] = [
-  { key: 'morning', label: 'Matin', emoji: '🌅', hint: 'avec le petit-déjeuner' },
-  { key: 'noon', label: 'Midi', emoji: '☀️', hint: 'avec le déjeuner' },
-  { key: 'evening', label: 'Soir', emoji: '🌙', hint: 'avec le dîner ou au coucher' },
+export type Moment = 'morning' | 'noon' | 'evening' | 'anytime'
+export type ReminderMoment = Exclude<Moment, 'anytime'>
+export const MOMENTS: { key: Moment; label: string; icon: string }[] = [
+  { key: 'morning', label: 'Matin', icon: 'Sunrise' },
+  { key: 'noon', label: 'Midi', icon: 'Sun' },
+  { key: 'evening', label: 'Soir', icon: 'Moon' },
+  { key: 'anytime', label: 'Dans la journée', icon: 'Clock' },
+]
+export const REMINDER_MOMENTS = MOMENTS.filter((m) => m.key !== 'anytime') as { key: ReminderMoment; label: string; icon: string }[]
+
+export type Kind = 'supplement' | 'phyto' | 'activity'
+export const KINDS: { key: Kind; label: string; icon: string }[] = [
+  { key: 'supplement', label: 'Complément', icon: 'Pill' },
+  { key: 'phyto', label: 'Plante', icon: 'Leaf' },
+  { key: 'activity', label: 'Activité', icon: 'Sparkles' },
 ]
 
 export interface Profile {
@@ -17,19 +27,22 @@ export interface Profile {
   sport_per_week: number
   sport_types: string[]
   cheat_max: number
-  reminders: Record<Moment, string>
+  reminders: Record<ReminderMoment, string>
   reminders_on: boolean
 }
 
 export interface RoutineItem {
   id: string
   user_id: string
-  kind: 'supplement' | 'phyto'
+  kind: Kind
   name: string
   dose: string
   moment: Moment
   active: boolean
   sort: number
+  icon: string
+  frequency: 'daily' | 'weekly'
+  weekly_target: number
 }
 
 export interface DailyLog {

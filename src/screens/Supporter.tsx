@@ -1,72 +1,46 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTracker } from '../lib/data'
-import { PRESET_ENCOURAGEMENTS } from '../lib/motivation'
-import { notifyEncouragement } from '../lib/push'
+import { enablePush, isIOS, isStandalone, pushSupported, testPush } from '../lib/push'
 import { supabase } from '../lib/supabase'
-import type { Encouragement, Profile } from '../lib/types'
+import type { Profile } from '../lib/types'
 import Today from './Today'
 import Week from './Week'
 
-export default function Supporter({ me, tab }: { me: Profile; tab: 'today' | 'week' | 'settings' }) {
-  const [partner, setPartner] = useState<Profile | null>(null)
+/** Vue du soutien : la journée et la semaine de la personne suivie, en lecture seule */
+export default function Supporter({ me, partner, tab }: { me: Profile; partner: Profile | null | undefined; tab: 'today' | 'week' | 'settings' }) {
   const tracker = useTracker(partner?.id)
-
-  useEffect(() => {
-    if (me.linked_to) supabase.from('profiles').select('*').eq('id', me.linked_to).single().then(({ data }) => setPartner(data))
-  }, [me.linked_to])
+  const [pushMsg, setPushMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const on = async () => {
+    try { await enablePush(me.id); setPushMsg({ ok: true, text: 'Notifications activées sur cet appareil.' }) }
+    catch (e) { setPushMsg({ ok: false, text: (e as Error).message }) }
+  }
+  const test = async () => { const text = await testPush(); setPushMsg({ ok: text.startsWith('Notification'), text }) }
 
   if (tab === 'settings') {
     return (
       <>
-        <div className="hello"><div className="grow"><h1>Réglages</h1><p>Connecté en soutien{partner ? ` de ${partner.name}` : ''}</p></div></div>
-        <div className="card"><button className="btn ghost block" onClick={() => supabase.auth.signOut()}>Se déconnecter</button></div>
+        <header className="head"><div className="grow"><div className="eyebrow">Réglages</div><h1 className="title">{me.name}</h1></div></header>
+        <section className="panel" style={{ padding: 16 }}>
+          <h2 style={{ fontSize: 15, margin: '0 0 6px' }}>Notifications</h2>
+          <p className="small muted" style={{ marginTop: 0 }}>Pour être prévenu quand {partner?.name ?? 'elle'} t'écrit.</p>
+          {isIOS() && !isStandalone() ? (
+            <p className="small" style={{ margin: 0 }}>Sur iPhone, ajoute d'abord Cocon à l'écran d'accueil puis ouvre-la depuis l'icône.</p>
+          ) : pushSupported() ? (
+            <div className="row">
+              <button className="btn primary s" onClick={on}>Activer</button>
+              <button className="btn s" onClick={test}>Tester</button>
+            </div>
+          ) : <p className="small muted" style={{ margin: 0 }}>Indisponibles sur ce navigateur.</p>}
+          {pushMsg && <p className={pushMsg.ok ? 'success' : 'error'}>{pushMsg.text}</p>}
+        </section>
+        <section className="panel" style={{ padding: 16 }}>
+          <p className="small muted" style={{ marginTop: 0 }}>Connecté en soutien{partner ? ` de ${partner.name}` : ''}.</p>
+          <button className="btn quiet block" onClick={() => supabase.auth.signOut()}>Se déconnecter</button>
+        </section>
       </>
     )
   }
-  if (!partner || tracker.loading) return <p className="center muted" style={{ marginTop: 80 }}>Chargement…</p>
+  if (!partner || tracker.loading) return <p className="center muted" style={{ marginTop: 120 }}>Chargement…</p>
   if (tab === 'week') return <Week profile={partner} tracker={tracker} />
-  return (
-    <>
-      <Composer me={me} partner={partner} />
-      <Today profile={partner} tracker={tracker} readOnly />
-    </>
-  )
-}
-
-function Composer({ me, partner }: { me: Profile; partner: Profile }) {
-  const [text, setText] = useState('')
-  const [sent, setSent] = useState<Encouragement[]>([])
-
-  useEffect(() => {
-    supabase.from('encouragements').select('*').eq('from_id', me.id).order('created_at', { ascending: false }).limit(3)
-      .then(({ data }) => setSent(data ?? []))
-  }, [me.id])
-
-  const send = async (message: string) => {
-    if (!message.trim()) return
-    const { data } = await supabase.from('encouragements').insert({ from_id: me.id, to_id: partner.id, message: message.trim() }).select().single()
-    if (data) {
-      setSent((s) => [data, ...s].slice(0, 3))
-      setText('')
-      notifyEncouragement(data.id)
-    }
-  }
-
-  return (
-    <section className="card" style={{ background: 'var(--rose-soft)' }}>
-      <div className="card-head"><span className="emoji-badge" style={{ background: 'var(--card)' }}>💌</span><h2>Encourager {partner.name}</h2></div>
-      <div className="row wrap" style={{ marginBottom: 10 }}>
-        {PRESET_ENCOURAGEMENTS.map((m) => <button key={m} className="chip" style={{ background: 'var(--card)' }} onClick={() => send(m)}>{m}</button>)}
-      </div>
-      <form className="row" onSubmit={(e) => { e.preventDefault(); send(text) }}>
-        <input className="input" style={{ background: 'var(--card)' }} placeholder="Un petit mot…" value={text} onChange={(e) => setText(e.target.value)} />
-        <button className="btn primary small" type="submit">Envoyer</button>
-      </form>
-      {sent[0] && (
-        <p className="muted small-text" style={{ margin: '10px 0 0' }}>
-          Dernier mot : « {sent[0].message} » · {sent[0].read_at ? 'lu ✓' : 'pas encore lu'}
-        </p>
-      )}
-    </section>
-  )
+  return <Today profile={partner} tracker={tracker} readOnly />
 }

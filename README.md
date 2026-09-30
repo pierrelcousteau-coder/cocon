@@ -11,7 +11,9 @@ Web app installable (PWA) pour suivre une routine préconception : compléments,
 | Pas de culpabilité | Série douce : ne casse qu'après **2 jours** manqués d'affilée ; messages bienveillants après un jour off |
 | Objectifs hebdo quand c'est plus pertinent | Sport 3×/semaine, repas plaisir ≤ 1/semaine |
 | Célébrer les progrès | Anneau du jour, confettis à 100 %, paliers (3, 7, 14, 21, 30, 66, 100 jours), bilan de semaine positif |
-| Soutien du partenaire | Compte soutien en lecture + mots d'encouragement (notification push) |
+| Soutien du partenaire | Compte soutien en lecture + onglet Messages à double sens (temps réel + notification push) |
+| Code couleur clair | Vert = fait, ambre = partiel, rouge = manqué ou dépassé (repas plaisir) |
+| Routine personnalisable | Compléments, plantes et activités/todos avec icône, quotidiens ou X fois par semaine |
 | Rattrapage facile | On peut remplir les 6 jours précédents (flèches à côté de la date) |
 
 ## Essayer en local (sans backend)
@@ -27,7 +29,7 @@ npm run demo
 
 ### 1. Supabase
 
-1. Nouveau projet (ou existant) → **SQL Editor** → coller `supabase/schema.sql` → *Run*.
+1. Nouveau projet (ou existant) → **SQL Editor** → coller `supabase/schema.sql` → *Run*, puis `supabase/migration_002.sql` → *Run*.
 2. **Authentication → Providers → Email** : laisser activé. Optionnel : désactiver *Confirm email* pour éviter l'étape de confirmation.
 3. **Project Settings → API** : noter `Project URL` et la clé `anon public`.
 
@@ -60,7 +62,7 @@ Puis **Database → Extensions** : activer `pg_cron` et `pg_net`, et exécuter `
 2. Repo → **Settings → Pages → Source : GitHub Actions**.
 3. Repo → **Settings → Secrets and variables → Actions → Variables** : ajouter `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_VAPID_PUBLIC_KEY`.
 4. Relancer le workflow (onglet *Actions*). L'app est servie sur `https://<toi>.github.io/cocon/`.
-5. Supabase → **Authentication → URL Configuration** : mettre cette URL en *Site URL*.
+5. Supabase → **Authentication → URL Configuration** : mettre cette URL en *Site URL* et l'ajouter dans *Redirect URLs* (nécessaire pour « mot de passe oublié »).
 
 > La clé `anon` et la clé VAPID publique sont faites pour être publiques (la sécurité repose sur les règles RLS du schéma). Ne jamais mettre la `service_role` key ni la clé VAPID privée dans le repo.
 

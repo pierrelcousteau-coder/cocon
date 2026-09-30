@@ -113,7 +113,7 @@ export function useTracker(userId: string | undefined) {
 
   const saveItem = async (item: Partial<RoutineItem> & Pick<RoutineItem, 'name' | 'kind' | 'moment'>) => {
     if (!userId) return
-    const row = { dose: '', active: true, sort: t.items.length, ...item, user_id: userId }
+    const row = { dose: '', active: true, sort: t.items.length, icon: '', frequency: 'daily', weekly_target: 1, ...item, user_id: userId }
     const { data, error } = await supabase.from('routine_items').upsert(row).select().single()
     if (error) throw error
     setT((s) => ({ ...s, items: [...s.items.filter((i) => i.id !== data.id), data].sort((a, b) => a.sort - b.sort) }))
